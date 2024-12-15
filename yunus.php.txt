@@ -143,7 +143,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     </style>
 </head>
 <body>
-    <h2>Dosya Yükleme ve Yönetim</h2>
+    <h2>YUNUS EMRE SHELL</h2>
 
     <!-- Menü -->
     <div class="menu">
